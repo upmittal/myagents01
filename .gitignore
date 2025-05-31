@@ -1,0 +1,3 @@
+.dotnetupgrade/
+*.pyc
+__pycache__/

@@ -3,7 +3,8 @@ import subprocess
 import logging
 import json
 from datetime import datetime
-from crewai_tools import BaseTool
+from typing import Any, Optional
+from crewai.tools import BaseTool
 
 # Assuming core_components.py is in the same directory or accessible in PYTHONPATH
 from .core_components import log_error, LLMApiClient, HumanFeedback, logger
@@ -105,9 +106,9 @@ class GitInitTool(BaseTool):
 class VBToCSTool(BaseTool):
     name: str = "VBToCSTool"
     description: str = "Converts VB.NET code to C# using an LLM. Input should be the path to a VB.NET file."
-    llm_client: LLMApiClient = None
+    llm_client: LLMApiClient #  = None
 
-    def __init__(self, llm_client: LLMApiClient = None, **kwargs):
+    def __init__(self, llm_client: LLMApiClient, **kwargs): #] = None
         super().__init__(**kwargs)
         if llm_client:
             self.llm_client = llm_client
@@ -132,9 +133,7 @@ class VBToCSTool(BaseTool):
             # Note: Prompt effectiveness can vary with the LLM. For smaller local models (e.g., via Ollama),
             # more explicit instructions or few-shot examples might improve conversion quality.
             # This prompt is a general starting point.
-            prompt = f"Convert the following VB.NET code to C#:
-
-{vb_code}"
+            prompt = f"Convert the following VB.NET code to C#: vb_file_path {vb_code}"
             cs_code = self.llm_client.generate_code(prompt)
 
             if cs_code.startswith("# ERROR:"):
@@ -164,8 +163,7 @@ class VBToCSTool(BaseTool):
                 f.write(cs_code)
 
             logger.info(f"Successfully converted {vb_file_path} to {cs_file_path}")
-            return f"Successfully converted {vb_file_path} to {cs_file_path}. Output:
-{cs_code[:200]}..."
+            return f"Successfully converted {vb_file_path} to {cs_file_path}. Output: {cs_code[:200]}..."
 
         except Exception as e:
             error_message = f"VBToCSTool: An unexpected error occurred during conversion of {vb_file_path}: {e}"
@@ -243,9 +241,9 @@ class DependencyAnalyzerTool(BaseTool):
 class ProjectUpgradeTool(BaseTool):
     name: str = "ProjectUpgradeTool"
     description: str = "Upgrades a .csproj file to a target .NET Framework version using an LLM. Input should be the .csproj file path and the target framework (e.g., 'net48', 'net6.0')."
-    llm_client: LLMApiClient = None
+    llm_client: LLMApiClient #] = None
 
-    def __init__(self, llm_client: LLMApiClient = None, **kwargs):
+    def __init__(self, llm_client: LLMApiClient, **kwargs): #]  = None
         super().__init__(**kwargs)
         if llm_client:
             self.llm_client = llm_client
@@ -254,7 +252,7 @@ class ProjectUpgradeTool(BaseTool):
         logger.info("ProjectUpgradeTool initialized.")
 
     @log_error
-    def _run(self, csproj_path: str, target_framework: str) -> str:
+    def _run(self, csproj_path: str, target_framework: str) -> str| Any:
         logger.info(f"Attempting to upgrade {csproj_path} to target framework: {target_framework}")
 
         if not os.path.isfile(csproj_path):
@@ -267,14 +265,17 @@ class ProjectUpgradeTool(BaseTool):
             if not original_csproj_content.strip():
                 return f"ProjectUpgradeTool: .csproj file is empty: {csproj_path}"
 
+
             # Note: This is a detailed prompt. Ensure your chosen LLM (especially local models via Ollama)
             # can handle long contexts and complex instructions effectively.
             # The instruction "Only output the raw XML..." is crucial for this tool to work correctly.
             # If the LLM struggles, simplifying the request or breaking it down might be necessary.
-            prompt = f"Upgrade the following .NET .csproj content to target framework '{target_framework}'. Ensure all necessary changes for compatibility are made, including updating SDK style if appropriate, and framework-specific package versions if known. Only output the raw XML of the modified .csproj file.
+            prompt = """
+            Upgrade the following .NET .csproj content to target framework {target_framework}. Ensure all necessary changes for compatibility are made, including updating SDK style if appropriate, and framework-specific package versions if known. Only output the raw XML of the modified .csproj file.
 
-Original .csproj content:
-{original_csproj_content}"
+                        Original .csproj content:
+                        {original_csproj_content}
+            """
 
             upgraded_csproj_content = self.llm_client.generate_code(prompt)
 
@@ -295,12 +296,12 @@ Original .csproj content:
                     logger.warn(f"ProjectUpgradeTool: {csproj_path} marked for manual upgrade by user.")
                     return f"ProjectUpgradeTool: {csproj_path} marked for manual upgrade. Original error: {upgraded_csproj_content}"
             elif not upgraded_csproj_content.strip().startswith("<Project"): # Handle invalid XML that wasn't an LLM error
-                logger.error(f"ProjectUpgradeTool: LLM output for {csproj_path} was not valid XML: {upgraded_csproj_content[:200]}... Ensure the LLM is configured to output only raw XML for .csproj.")
-                return f"ProjectUpgradeTool: Failed to upgrade {csproj_path} due to invalid XML response from LLM (but not an API error): {upgraded_csproj_content[:200]}..."
+                logger.error(f"""ProjectUpgradeTool: LLM output for {csproj_path} was not valid XML: {upgraded_csproj_content[:200]}... Ensure the LLM is configured to output only raw XML for .csproj.""")
+                return f"""ProjectUpgradeTool: Failed to upgrade {csproj_path} due to invalid XML response from LLM (but not an API error): {upgraded_csproj_content[:200]}..."""
 
             # It's good practice to backup the original file before overwriting
             backup_path = csproj_path + ".bak"
-            logger.info(f"Backing up original {csproj_path} to {backup_path}")
+            logger.info(f"""Backing up original {csproj_path} to {backup_path}""")
             import shutil
             shutil.copy(csproj_path, backup_path)
 
@@ -308,8 +309,7 @@ Original .csproj content:
                 f.write(upgraded_csproj_content)
 
             logger.info(f"Successfully upgraded {csproj_path} to {target_framework}. Backup created at {backup_path}")
-            return f"Successfully upgraded {csproj_path} to {target_framework}. Backup: {backup_path}. Upgraded content (first 200 chars):
-{upgraded_csproj_content[:200]}..."
+            return f"""Successfully upgraded {csproj_path} to {target_framework}. Backup: {backup_path}. Upgraded content (first 200 chars): {upgraded_csproj_content[:200]}..."""
 
         except Exception as e:
             error_message = f"ProjectUpgradeTool: An unexpected error occurred during upgrade of {csproj_path}: {e}"
@@ -319,9 +319,9 @@ Original .csproj content:
 class BuildTool(BaseTool):
     name: str = "BuildTool"
     description: str = "Builds a .NET project or solution using 'dotnet build'. If errors occur, it can optionally use an LLM to suggest fixes. Input is the path to the .csproj or .sln file."
-    llm_client: LLMApiClient = None
+    llm_client: LLMApiClient #= None
 
-    def __init__(self, llm_client: LLMApiClient = None, **kwargs):
+    def __init__(self, llm_client: LLMApiClient, **kwargs):
         super().__init__(**kwargs)
         if llm_client:
             self.llm_client = llm_client
@@ -330,7 +330,7 @@ class BuildTool(BaseTool):
         logger.info("BuildTool initialized.")
 
     @log_error
-    def _run(self, project_or_solution_path: str) -> str:
+    def _run(self, project_or_solution_path: str) -> str | Any:
         logger.info(f"Attempting to build: {project_or_solution_path}")
 
         if not os.path.isfile(project_or_solution_path):
@@ -351,21 +351,21 @@ class BuildTool(BaseTool):
             )
 
             if process.returncode == 0:
-                success_message = f"BuildTool: Build successful for {project_or_solution_path}.
-Output:
-{process.stdout}"
+                success_message = f"""BuildTool: Build successful for {project_or_solution_path}.
+                                        Output:
+                                        {process.stdout}"""
                 logger.info(success_message)
                 return success_message
             else:
                 error_output = process.stderr if process.stderr else process.stdout
-                logger.error(f"BuildTool: Build failed for {project_or_solution_path}. Return code: {process.returncode}
-Errors:
-{error_output}")
+                logger.error(f"""BuildTool: Build failed for {project_or_solution_path}. Return code: {process.returncode}
+                                    Errors:
+                                    {error_output}""")
 
                 # Ask user if they want to attempt LLM fix
                 # In a real agent flow, this decision might be pre-configured or made by an agent
                 choice = HumanFeedback.get_feedback(
-                    f"Build failed for {project_or_solution_path}. Do you want to attempt an LLM-based fix for the errors?",
+                    f"""Build failed for {project_or_solution_path}. Do you want to attempt an LLM-based fix for the errors?""",
                     options=["Yes, attempt LLM fix", "No, log error and continue"]
                 )
 
@@ -394,17 +394,17 @@ Errors:
                     # The quality of the suggested fix will heavily depend on the LLM's coding and reasoning capabilities.
                     # For local models (Ollama), larger, more capable models are recommended for this task.
                     # The instruction "Output the suggested fix clearly" is important.
-                    prompt = f"The .NET build for project '{project_or_solution_path}' failed with the following errors:
-{error_output}
+                    prompt = f"""The .NET build for project '{project_or_solution_path}' failed with the following errors:
+                                {error_output}
 
-Here is some code context from the project (first 2000 characters of .cs/.vb files):
-{code_context}
+                                Here is some code context from the project (first 2000 characters of .cs/.vb files):
+                                {code_context}
 
-Please provide a detailed explanation of the likely cause and a specific suggested code modification or .csproj file change to fix these errors. Focus on common issues related to framework upgrades or package incompatibilities. Output the suggested fix clearly."
+                        Please provide a detailed explanation of the likely cause and a specific suggested code modification or .csproj file change to fix these errors. Focus on common issues related to framework upgrades or package incompatibilities. Output the suggested fix clearly."""
 
                     suggested_fix = self.llm_client.generate_code(prompt)
 
-                    # logger.info(f"LLM suggested fix:\n{suggested_fix}") # Already logged by decorator
+                    # logger.info(f"""LLM suggested fix:\n{suggested_fix}""") # Already logged by decorator
 
                     if suggested_fix.startswith("# ERROR:"):
                         logger.error(f"BuildTool: LLM failed to provide a fix suggestion for {project_or_solution_path}. LLM Client Error: {suggested_fix}")
@@ -432,15 +432,15 @@ Please provide a detailed explanation of the likely cause and a specific suggest
                         # This is a placeholder for that complex logic.
                         logger.warning("Simulating application of LLM fix. In a real system, this would be a complex operation.")
                         # Here you might try to re-run the build after a simulated fix or a simple file touch.
-                        return f"BuildTool: Build failed. LLM suggested a fix (simulated application):
-{suggested_fix}"
-                    else:
-                        return f"BuildTool: Build failed. LLM suggested a fix (not applied):
-{suggested_fix}"
-                else:
-                    return f"BuildTool: Build failed for {project_or_solution_path}. No LLM fix attempted.
-Errors:
-{error_output}"
+                        return f"""BuildTool: Build failed. LLM suggested a fix (simulated application):
+                                {suggested_fix}"
+                                    else:
+                                        return f"BuildTool: Build failed. LLM suggested a fix (not applied):
+                                {suggested_fix}"
+                                    else:
+                                        return f"BuildTool: Build failed for {project_or_solution_path}. No LLM fix attempted.
+                                Errors:
+                                    {error_output}"""
 
         except subprocess.TimeoutExpired:
             error_message = f"BuildTool: Build command timed out for {project_or_solution_path}."
@@ -534,7 +534,7 @@ class ReportTool(BaseTool):
     description: str = "Generates an upgrade report from collected details. Input should be a dictionary of details."
 
     @log_error
-    def _run(self, upgrade_details: dict, report_format: str = "json") -> str:
+    def _run(self, upgrade_details: dict, report_format: str = "json") -> str | Any:
         timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
         report_file_name = f"upgrade_report_{timestamp_str}.{report_format.lower()}"
         report_path = os.path.join(os.getcwd(), report_file_name) # Save in current working directory or specify a path
@@ -553,16 +553,11 @@ class ReportTool(BaseTool):
                     json.dump(report_content, f, indent=4, default=str) # default=str for non-serializable like datetime
             elif report_format.lower() == "txt":
                 with open(report_path, 'w', encoding='utf-8') as f:
-                    f.write(f"Upgrade Report - {report_content['report_generated_at']}
-")
-                    f.write("=" * 30 + "
-")
-                    f.write(f"Summary: {report_content['upgrade_process_summary']}
-
-")
+                    f.write(f"""Upgrade Report - {report_content['report_generated_at']}""")
+                    f.write("""=" * 30 + """)
+                    f.write(f"Summary: {report_content['upgrade_process_summary']}")
                     for key, value in report_content['details'].items():
-                        f.write(f"{key.replace('_', ' ').title()}: {json.dumps(value, indent=2, default=str)}
-")
+                        f.write(f"{key.replace('_', ' ').title()}: {json.dumps(value, indent=2, default=str)}")
             else:
                 return f"ReportTool: Unsupported report format '{report_format}'. Supported formats: json, txt."
 

@@ -96,26 +96,33 @@ if __name__ == '__main__':
     neoload_project_sample = "MyApplicationTests.nlp"
 
     task1 = tasks_collection.retrieve_code_task(tfs_repo_url=tfs_url_sample, local_checkout_path=checkout_path_sample)
-    print(f"Created Task: {task1.description[:50]}... for agent: {task1.agent.role}")
+    agent_role1 = getattr(task1.agent, "role", "Unknown") if task1.agent is not None else "None"
+    print(f"Created Task: {task1.description[:50]}... for agent: {agent_role1}")
 
     task2 = tasks_collection.convert_vb_to_csharp_task(vb_project_path_or_file=vb_project_sample, git_branch_name=git_conversion_branch_sample)
-    print(f"Created Task: {task2.description[:50]}... for agent: {task2.agent.role}")
+    agent_role2 = getattr(task2.agent, "role", "Unknown") if task2.agent is not None else "None"
+    print(f"Created Task: {task2.description[:50]}... for agent: {agent_role2}")
 
     task3 = tasks_collection.analyze_dependencies_task(project_or_solution_file=csproj_sample)
-    print(f"Created Task: {task3.description[:50]}... for agent: {task3.agent.role}")
+    agent_role3 = getattr(task3.agent, "role", "Unknown") if task3.agent is not None else "None"
+    print(f"Created Task: {task3.description[:50]}... for agent: {agent_role3}")
 
     task4 = tasks_collection.upgrade_project_framework_task(csproj_file_path=csproj_sample, target_framework=target_fw_sample, git_branch_name=git_upgrade_branch_sample)
-    print(f"Created Task: {task4.description[:50]}... for agent: {task4.agent.role}")
+    agent_role4 = getattr(task4.agent, "role", "Unknown") if task4.agent is not None else "None"
+    print(f"Created Task: {task4.description[:50]}... for agent: {agent_role4}")
 
     task5 = tasks_collection.deploy_application_task(application_build_path=app_build_path_sample, iis_site_name=iis_site_sample)
-    print(f"Created Task: {task5.description[:50]}... for agent: {task5.agent.role}")
+    agent_role5 = getattr(task5.agent, "role", "Unknown") if task5.agent is not None else "None"
+    print(f"Created Task: {task5.description[:50]}... for agent: {agent_role5}")
 
     task6 = tasks_collection.run_performance_tests_task(neoload_project=neoload_project_sample, users=10)
-    print(f"Created Task: {task6.description[:50]}... for agent: {task6.agent.role}")
+    agent_role6 = getattr(task6.agent, "role", "Unknown") if task6.agent is not None else "None"
+    print(f"Created Task: {task6.description[:50]}... for agent: {agent_role6}")
 
     # For the report task, collected_data would come from the crew's execution context
     sample_report_data = {"step1_result": "Success", "step2_result": "Partial Success with warnings"}
     task7 = tasks_collection.generate_final_report_task(collected_upgrade_data=sample_report_data)
-    print(f"Created Task: {task7.description[:50]}... for agent: {task7.agent.role}")
+    agent_role7 = getattr(task7.agent, "role", "Unknown") if task7.agent is not None else "None"
+    print(f"Created Task: {task7.description[:50]}... for agent: {agent_role7}")
 
     logger.info("Task definition tests complete. All task creation methods tested.")

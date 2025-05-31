@@ -13,7 +13,7 @@ from .tools import (
 from .core_components import LLMApiClient, logger
 
 # Optional: Initialize a shared LLM client instance if you want all agents/tools to use the same one.
-# llm_client = LLMApiClient(api_key="YOUR_ACTUAL_API_KEY", endpoint="YOUR_ACTUAL_ENDPOINT")
+llm_client = LLMApiClient(api_key="YOUR_ACTUAL_API_KEY", endpoint="YOUR_ACTUAL_ENDPOINT")
 # If not, tools will instantiate their own default LLMApiClient.
 
 # Initialize tools once here if they need specific setup or shared resources,
@@ -24,10 +24,10 @@ from .core_components import LLMApiClient, logger
 
 tfs_tool = TFSTool()
 git_tool = GitInitTool()
-vb_to_cs_tool = VBToCSTool() # Can take llm_client=llm_client
+vb_to_cs_tool = VBToCSTool(llm_client) # Can take llm_client=llm_client
 dep_analyzer_tool = DependencyAnalyzerTool()
-project_upgrade_tool = ProjectUpgradeTool() # Can take llm_client=llm_client
-build_tool = BuildTool() # Can take llm_client=llm_client
+project_upgrade_tool = ProjectUpgradeTool(llm_client) # Can take llm_client=llm_client
+build_tool = BuildTool(llm_client) # Can take llm_client=llm_client
 iis_tool = IISTool()
 neoload_tool = NeoLoadTool()
 report_tool = ReportTool()

@@ -1,9 +1,15 @@
 import os
 from crewai import Crew, Process
-# from .agents import DotNetUpgradeAgents  # Commented out for script-first approach
-# from .tasks import DotNetUpgradeTasks   # Commented out for script-first approach
-# from .core_components import logger, HumanFeedback # Commented out for script-first approach
+from crewai.agents.agent_builder.base_agent import BaseAgent
+from typing import List
+from crewai import Agent, Crew, Task, Process
+from crewai.project import CrewBase, agent, task, crew, before_kickoff, after_kickoff
+from .agents import DotNetUpgradeAgents  # Commented out for script-first approach
+from .tasks import DotNetUpgradeTasks   # Commented out for script-first approach
+from .core_components import logger, HumanFeedback # Commented out for script-first approach
 
+# agents: List[Agent]
+# tasks: List[Task]
 # This allows the script to be run from the root directory of the project or from within DotNetUpgradeAgents
 if __package__ is None or __package__ == '':
     # When run as a script, adjust path to import from sibling directories
@@ -28,11 +34,17 @@ def main():
 
     # Use HumanFeedback to get critical paths
     print("\n--- .NET Upgrade Agent System Configuration ---")
-    tfs_repo_url = HumanFeedback.get_feedback("Enter the TFS repository URL (e.g., tfs://server/collection/project):")
+    tfs_repo_url = HumanFeedback.get_feedback(
+        "Enter the TFS repository URL (e.g., tfs://server/collection/project):",
+        options=["tfs://server/collection/project", "https://dev.azure.com/your_org/your_project/_git/your_repo"]
+    )
 
     # Suggest a default local path based on the current working directory
     default_checkout_base = os.path.join(os.getcwd(), "temp_upgrade_work")
-    local_checkout_base_path = HumanFeedback.get_feedback(f"Enter the base local path for code checkout and operations (default: {default_checkout_base}):")
+    local_checkout_base_path = HumanFeedback.get_feedback(
+        f"Enter the base local path for code checkout and operations (default: {default_checkout_base}):",
+        options=[default_checkout_base]
+    )
     if not local_checkout_base_path:
         local_checkout_base_path = default_checkout_base
 
@@ -138,16 +150,24 @@ def main():
 
 
     # --- Assemble the Crew ---
-    # Note: The agents are already instantiated by the factory methods within the task definitions.
+    # Instantiate agents using the agent_factory
+    code_retrieval_agent = agent_factory.code_retrieval_agent()
+    code_conversion_agent = agent_factory.code_conversion_agent()
+    dependency_analyzer_agent = agent_factory.dependency_analyzer_agent()
+    upgrade_coordinator_agent = agent_factory.upgrade_coordinator_agent()
+    deployment_agent = agent_factory.deployment_agent()
+    testing_agent = agent_factory.testing_agent()
+    reporting_agent = agent_factory.reporting_agent()
+
     # We need to list the unique agents involved.
     agents_list = [
-        agent_factory.code_retrieval_agent(),
-        agent_factory.code_conversion_agent(),
-        agent_factory.dependency_analyzer_agent(),
-        agent_factory.upgrade_coordinator_agent(),
-        agent_factory.deployment_agent(),
-        agent_factory.testing_agent(),
-        agent_factory.reporting_agent()
+        code_retrieval_agent,
+        code_conversion_agent,
+        dependency_analyzer_agent,
+        upgrade_coordinator_agent,
+        deployment_agent,
+        testing_agent,
+        reporting_agent
     ]
 
     tasks_list = [
@@ -173,10 +193,10 @@ def main():
 
     logger.info("Assembling the .NET Upgrade Crew...")
     crew = Crew(
-        agents=agents_list,
+        agents=[code_retrieval_agent,code_conversion_agent,dependency_analyzer_agent,upgrade_coordinator_agent,deployment_agent,testing_agent, reporting_agent],  # Convert agents to dicts
         tasks=tasks_list,
         process=Process.sequential,  # Tasks will run one after another
-        verbose=2  # 0 for no logs, 1 for agent logs, 2 for detailed logs
+        verbose= True # 0 for no logs, 1 for agent logs, 2 for detailed logs
         # memory=True # Optional: enable memory for the crew
     )
 

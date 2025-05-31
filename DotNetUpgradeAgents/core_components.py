@@ -13,9 +13,9 @@ logger = logging.getLogger("DotNetUpgradeSystem") # General application logger
 llm_interaction_logger = logging.getLogger("LLMInteractions")
 llm_interaction_logger.setLevel(logging.DEBUG)
 llm_interaction_logger.propagate = False
-
+log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_interactions.log")
 try:
-    log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_interactions.log")
+
     llm_fh = logging.FileHandler(log_file_path, mode='a', encoding='utf-8')
     logger.info(f"LLM interaction log will be saved to: {log_file_path}")
 except Exception as e:
@@ -47,7 +47,7 @@ def log_error(func):
     return wrapper
 
 class LLMApiClient:
-    def __init__(self, api_key: str = None, endpoint: str = None, ollama_model_name: str = None):
+    def __init__(self, api_key: str ="", endpoint: str="" , ollama_model_name: str = ""):
         env_api_key = os.getenv("LLM_API_KEY")
         env_endpoint = os.getenv("LLM_API_ENDPOINT")
         env_ollama_model = os.getenv("OLLAMA_MODEL")
@@ -150,7 +150,7 @@ class LLMApiClient:
         except Exception as e:
             llm_interaction_logger.error(f"LLM Request - Failed to serialize payload for logging: {e}")
         llm_interaction_logger.debug(f"LLM Request - Headers: {headers}")
-
+        response = any
         try:
             response = requests.post(
                 actual_endpoint, # Use actual_endpoint which might be adjusted for /api/generate
@@ -169,7 +169,7 @@ class LLMApiClient:
                 llm_interaction_logger.error(f"LLM Response - Failed to serialize successful JSON response for logging: {e}")
                 llm_interaction_logger.debug(f"LLM Response - Raw Text (if serialization failed): {response.text}")
 
-            generated_text = None
+            generated_text = any
             if self.is_ollama_like_endpoint:
                 if actual_endpoint.endswith("/api/chat"): # Ollama chat response
                     if "message" in response_json and "content" in response_json["message"]:
@@ -216,7 +216,7 @@ class LLMApiClient:
             llm_interaction_logger.error(f"LLM Error - {error_message}. Response: {response_text}")
             return f"# ERROR: LLM_API_CALL_FAILED. {error_message}. Check logs for response body."
         except (KeyError, IndexError, TypeError, json.JSONDecodeError) as e: # Added json.JSONDecodeError to this line
-            response_text_for_parse_error = response.text if 'response' in locals() and hasattr(response, 'text') else 'Response object or text not available'
+            response_text_for_parse_error = response if 'response' in locals() and hasattr(response, 'text') else 'Response object or text not available'
             error_message = f"Failed to parse LLM response JSON or access expected keys: {e}"
             logger.error(f"LLMApiClient: {error_message}. Response was: {response_text_for_parse_error}")
             llm_interaction_logger.error(f"LLM Error - {error_message}. Response text: {response_text_for_parse_error}")
@@ -230,7 +230,7 @@ class LLMApiClient:
 class HumanFeedback:
     @staticmethod
     @log_error
-    def get_feedback(prompt: str, options: list = None) -> str:
+    def get_feedback(prompt: str, options: list) -> str:
         print(f"\n=== Human Feedback Required ===\n{prompt}")
         if options:
             print("Options:")
