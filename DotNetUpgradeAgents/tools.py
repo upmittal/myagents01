@@ -129,6 +129,9 @@ class VBToCSTool(BaseTool):
             if not vb_code.strip():
                 return f"VBToCSTool: VB.NET file is empty: {vb_file_path}"
 
+            # Note: Prompt effectiveness can vary with the LLM. For smaller local models (e.g., via Ollama),
+            # more explicit instructions or few-shot examples might improve conversion quality.
+            # This prompt is a general starting point.
             prompt = f"Convert the following VB.NET code to C#:
 
 {vb_code}"
@@ -264,6 +267,10 @@ class ProjectUpgradeTool(BaseTool):
             if not original_csproj_content.strip():
                 return f"ProjectUpgradeTool: .csproj file is empty: {csproj_path}"
 
+            # Note: This is a detailed prompt. Ensure your chosen LLM (especially local models via Ollama)
+            # can handle long contexts and complex instructions effectively.
+            # The instruction "Only output the raw XML..." is crucial for this tool to work correctly.
+            # If the LLM struggles, simplifying the request or breaking it down might be necessary.
             prompt = f"Upgrade the following .NET .csproj content to target framework '{target_framework}'. Ensure all necessary changes for compatibility are made, including updating SDK style if appropriate, and framework-specific package versions if known. Only output the raw XML of the modified .csproj file.
 
 Original .csproj content:
@@ -383,6 +390,10 @@ Errors:
                         if len(code_context) > 8000: # Limit context size
                             break
 
+                    # Note: Providing build errors and code context to an LLM for bug fixing is complex.
+                    # The quality of the suggested fix will heavily depend on the LLM's coding and reasoning capabilities.
+                    # For local models (Ollama), larger, more capable models are recommended for this task.
+                    # The instruction "Output the suggested fix clearly" is important.
                     prompt = f"The .NET build for project '{project_or_solution_path}' failed with the following errors:
 {error_output}
 

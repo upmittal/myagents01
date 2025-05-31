@@ -45,17 +45,37 @@ This project implements a multi-agent system using CrewAI to automate and assist
 1.  **Clone the repository.**
 2.  **Install dependencies**: `pip install crewai crewai-tools requests`
 3.  **LLM API Configuration (Real or Simulated)**:
-    -   The system can interact with a real Large Language Model (LLM) API for tasks like code conversion and error suggestion. By default, if no configuration is provided, it will indicate that the LLM client is not configured.
-    -   **To use a real LLM, you MUST set the following environment variables before running the application:**
-        -   `LLM_API_KEY`: Your API key for the chosen LLM provider.
-        -   `LLM_API_ENDPOINT`: The full HTTP(S) endpoint URL for the API.
-            -   *Example for an OpenAI-compatible API*: `https://api.openai.com/v1/chat/completions` (or your specific model endpoint)
+
+    The system can interact with a real Large Language Model (LLM) API for tasks like code conversion and error suggestion. It supports both generic cloud-based LLM APIs and local LLMs via Ollama.
+
+    **Common Setup:**
+    - The `LLMApiClient` in `DotNetUpgradeAgents/core_components.py` handles LLM interactions.
+    - **LLM Interaction Logging**: All prompts sent to the LLM and the full raw responses (or errors) are logged to a dedicated file named `llm_interactions.log`, located in the `DotNetUpgradeAgents` directory. This is useful for debugging and reviewing LLM performance.
+
+    **A. Using Ollama (for Local LLMs):**
+    -   Ensure Ollama is installed and running with your desired models pulled (e.g., `ollama pull mistral`).
+    -   Set the following environment variables:
+        -   `LLM_API_ENDPOINT`: Your local Ollama API endpoint.
+            -   For generation tasks (like code conversion, project upgrades): `http://localhost:11434/api/generate`
+            -   For chat-style interactions (if tools are adapted for it): `http://localhost:11434/api/chat`
+            *(The client currently defaults to using `/api/generate` if the endpoint doesn't specify `/api/chat` or `/api/generate` but looks like Ollama. It can also distinguish if `/api/chat` is in the endpoint string)*
+        -   `OLLAMA_MODEL`: The name of the Ollama model you want to use (e.g., `mistral`, `codellama:13b`, `llama2`). If not set, the system defaults to `mistral`.
+        -   `LLM_API_KEY`: This is typically **not required** for local Ollama instances. If set, it will be ignored when an Ollama endpoint is detected.
+
+    **B. Using Generic Cloud-Based LLM APIs (e.g., OpenAI, Anthropic, Azure OpenAI):**
+    -   Set the following environment variables:
+        -   `LLM_API_ENDPOINT`: The full HTTP(S) endpoint URL for your cloud provider's API.
+            -   *Example for an OpenAI-compatible API*: `https://api.openai.com/v1/chat/completions`
             -   *Example for Azure OpenAI*: `https://<your-resource-name>.openai.azure.com/openai/deployments/<your-deployment-name>/chat/completions?api-version=<api-version>`
-            -   *Example for a local LLM*: `http://localhost:8080/v1/completions`
-    -   The `LLMApiClient` in `DotNetUpgradeAgents/core_components.py` is designed to load these environment variables.
-    -   **Payload Structure**: The JSON payload sent to the LLM (within `LLMApiClient.generate_code`) is structured generically. You may need to adjust the `payload` dictionary in that method to match the specific requirements of your LLM provider (e.g., different parameter names for `prompt`, `max_tokens`, or model selection). The client attempts to parse various common response structures, but this might also need provider-specific adjustments.
-    -   **API Costs**: Be aware that making calls to commercial LLM APIs will likely incur costs based on your provider's pricing model (usually per token). Monitor your usage.
-    -   If these environment variables are not set, the `LLMApiClient` will not be able to make calls, and tools relying on it will indicate an error or prompt for alternative actions.
+        -   `LLM_API_KEY`: Your API key for the chosen LLM provider. This is **required** for most cloud APIs.
+        -   `OLLAMA_MODEL`: This variable is ignored if the endpoint is not detected as an Ollama endpoint.
+
+    **Important Notes on LLM Client Behavior:**
+    -   The `LLMApiClient` attempts to auto-detect if the `LLM_API_ENDPOINT` is for Ollama (by checking for "ollama" or "localhost:11434" in the URL).
+    -   **Payload Structure**: The JSON payload sent to the LLM (within `LLMApiClient.generate_code`) is structured based on whether an Ollama endpoint is detected or not. You may still need to adjust the payload details (e.g., specific parameters for temperature, top_p, or model-specific fields) within the `LLMApiClient.generate_code` method to optimally match your chosen LLM provider or model's requirements.
+    -   **Response Parsing**: The client attempts to parse various common response structures from both Ollama and generic APIs. If your specific LLM provider has a unique response format for the generated text, you might need to update the parsing logic in `LLMApiClient.generate_code`.
+    -   **API Costs**: Be aware that making calls to commercial LLM APIs will likely incur costs. Using local LLMs via Ollama avoids direct API costs but utilizes your local hardware resources.
+    -   If the necessary endpoint (and API key for cloud LLMs) is not configured, the `LLMApiClient` will not be able to make calls, and tools relying on it will indicate a configuration error or prompt for alternative actions.
 
 4.  **External Tool Paths (Simulated by default)**:
     -   Tools like `TFSTool`, `IISTool`, `NeoLoadTool` simulate their operations.
