@@ -134,13 +134,24 @@ class VBToCSTool(BaseTool):
 {vb_code}"
             cs_code = self.llm_client.generate_code(prompt)
 
-            if cs_code.startswith("# LLM API call failed") or cs_code.startswith("# Error: No generated_code"):
-                logger.error(f"VBToCSTool: LLM code generation failed for {vb_file_path}. Response: {cs_code}")
-                # Optionally, ask for human feedback
-                # action = HumanFeedback.get_feedback(f"LLM failed to convert {vb_file_path}. Error: {cs_code}", ["Retry", "Skip", "Manual Conversion"])
-                # if action == "Retry": return self._run(vb_file_path)
-                # if action == "Skip": return f"Conversion of {vb_file_path} skipped by user."
-                return f"VBToCSTool: Failed to convert {vb_file_path} due to LLM error: {cs_code}"
+            if cs_code.startswith("# ERROR:"):
+                logger.error(f"VBToCSTool: LLM code generation failed for {vb_file_path}. LLM Client Response: {cs_code}")
+
+                prompt_text = f"LLM failed to convert VB.NET file '{vb_file_path}'. Error: {cs_code}\nHow would you like to proceed?"
+                options = ["Retry conversion", "Skip this file", "Mark for manual conversion"]
+                choice = HumanFeedback.get_feedback(prompt_text, options)
+
+                if choice == "Retry conversion":
+                    logger.info(f"VBToCSTool: User chose to retry conversion for {vb_file_path}.")
+                    return self._run(vb_file_path) # Recursive call to retry
+                elif choice == "Skip this file":
+                    logger.info(f"VBToCSTool: User chose to skip conversion for {vb_file_path}.")
+                    return f"VBToCSTool: Conversion of {vb_file_path} skipped by user."
+                elif choice == "Mark for manual conversion":
+                    logger.warn(f"VBToCSTool: {vb_file_path} marked for manual conversion by user.")
+                    return f"VBToCSTool: {vb_file_path} marked for manual conversion. Original error: {cs_code}"
+                else: # Should not happen with given options
+                    return f"VBToCSTool: Unexpected choice for {vb_file_path}. Error: {cs_code}"
 
             cs_file_path = vb_file_path.replace(".vb", ".cs").replace(".VB", ".cs") # Handle different extensions
             if cs_file_path == vb_file_path: # Avoid overwriting if extension didn't change
@@ -260,9 +271,25 @@ Original .csproj content:
 
             upgraded_csproj_content = self.llm_client.generate_code(prompt)
 
-            if upgraded_csproj_content.startswith("# LLM API call failed") or upgraded_csproj_content.startswith("# Error: No generated_code") or not upgraded_csproj_content.strip().startswith("<Project"):
-                logger.error(f"ProjectUpgradeTool: LLM .csproj upgrade failed for {csproj_path}. Response: {upgraded_csproj_content[:200]}...")
-                return f"ProjectUpgradeTool: Failed to upgrade {csproj_path} due to LLM error or invalid XML response: {upgraded_csproj_content[:200]}..."
+            if upgraded_csproj_content.startswith("# ERROR:"): # Check specifically for LLM client errors
+                logger.error(f"ProjectUpgradeTool: LLM .csproj upgrade failed for {csproj_path}. LLM Client Response: {upgraded_csproj_content}") # Log full error
+
+                prompt_text = f"LLM failed to upgrade .csproj file '{csproj_path}'. Error: {upgraded_csproj_content}\nHow would you like to proceed?"
+                options = ["Retry upgrade", "Skip this project", "Mark for manual upgrade"]
+                choice = HumanFeedback.get_feedback(prompt_text, options)
+
+                if choice == "Retry upgrade":
+                    logger.info(f"ProjectUpgradeTool: User chose to retry upgrade for {csproj_path}.")
+                    return self._run(csproj_path, target_framework)
+                elif choice == "Skip this project":
+                    logger.info(f"ProjectUpgradeTool: User chose to skip upgrade for {csproj_path}.")
+                    return f"ProjectUpgradeTool: Upgrade of {csproj_path} skipped by user."
+                elif choice == "Mark for manual upgrade":
+                    logger.warn(f"ProjectUpgradeTool: {csproj_path} marked for manual upgrade by user.")
+                    return f"ProjectUpgradeTool: {csproj_path} marked for manual upgrade. Original error: {upgraded_csproj_content}"
+            elif not upgraded_csproj_content.strip().startswith("<Project"): # Handle invalid XML that wasn't an LLM error
+                logger.error(f"ProjectUpgradeTool: LLM output for {csproj_path} was not valid XML: {upgraded_csproj_content[:200]}... Ensure the LLM is configured to output only raw XML for .csproj.")
+                return f"ProjectUpgradeTool: Failed to upgrade {csproj_path} due to invalid XML response from LLM (but not an API error): {upgraded_csproj_content[:200]}..."
 
             # It's good practice to backup the original file before overwriting
             backup_path = csproj_path + ".bak"
@@ -366,15 +393,25 @@ Please provide a detailed explanation of the likely cause and a specific suggest
 
                     suggested_fix = self.llm_client.generate_code(prompt)
 
-                    logger.info(f"LLM suggested fix:
-{suggested_fix}")
+                    # logger.info(f"LLM suggested fix:\n{suggested_fix}") # Already logged by decorator
 
-                    # Ask user if they want to apply the fix (simulation - real application is complex)
+                    if suggested_fix.startswith("# ERROR:"):
+                        logger.error(f"BuildTool: LLM failed to provide a fix suggestion for {project_or_solution_path}. LLM Client Error: {suggested_fix}")
+                        prompt_text = f"LLM failed to provide a fix suggestion for build errors in '{project_or_solution_path}'. Error: {suggested_fix}\nHow would you like to proceed?"
+                        options = ["Log build errors and continue (no fix)", "Retry getting LLM suggestion"]
+                        llm_error_choice = HumanFeedback.get_feedback(prompt_text, options)
+
+                        if llm_error_choice == "Retry getting LLM suggestion":
+                            logger.info(f"BuildTool: User chose to retry getting LLM suggestion for {project_or_solution_path}.")
+                            suggested_fix = self.llm_client.generate_code(prompt) # Retry the call
+                            if suggested_fix.startswith("# ERROR:"):
+                                 return f"BuildTool: Build failed. LLM also failed on retry to provide fix: {suggested_fix}"
+                            # Fall through to normal suggestion handling if retry is successful
+                        else: # Log build errors and continue
+                            return f"BuildTool: Build failed for {project_or_solution_path}. LLM failed to provide fix: {suggested_fix}. Errors logged."
+
                     apply_choice = HumanFeedback.get_feedback(
-                        f"LLM suggested the following fix. Should the system attempt to apply it (simulated - this is risky)?
-
-{suggested_fix[:500]}...
-",
+                        f"LLM suggested the following fix for '{project_or_solution_path}'. Should the system attempt to apply it (simulated - this is risky)?\n\n{suggested_fix[:500]}...\n",
                         options=["Yes, attempt to apply (simulated)", "No, just log the suggestion"]
                     )
 

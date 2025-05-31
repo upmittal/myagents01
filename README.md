@@ -44,13 +44,18 @@ This project implements a multi-agent system using CrewAI to automate and assist
 
 1.  **Clone the repository.**
 2.  **Install dependencies**: `pip install crewai crewai-tools requests`
-3.  **LLM API Configuration (Simulated by default)**:
-    -   The `LLMApiClient` in `DotNetUpgradeAgents/core_components.py` is currently configured to simulate LLM responses.
-    -   To use a real LLM, you would need to update the `LLMApiClient` class:
-        -   Modify the `__init__` method to accept your API key and endpoint.
-        -   Update the `generate_code` method to make actual HTTP requests to your chosen LLM API.
-        -   Pass your API key and endpoint when `LLMApiClient` is instantiated, or set them as environment variables that the client reads.
-    -   The `main.py` script and tools currently rely on the default simulated client.
+3.  **LLM API Configuration (Real or Simulated)**:
+    -   The system can interact with a real Large Language Model (LLM) API for tasks like code conversion and error suggestion. By default, if no configuration is provided, it will indicate that the LLM client is not configured.
+    -   **To use a real LLM, you MUST set the following environment variables before running the application:**
+        -   `LLM_API_KEY`: Your API key for the chosen LLM provider.
+        -   `LLM_API_ENDPOINT`: The full HTTP(S) endpoint URL for the API.
+            -   *Example for an OpenAI-compatible API*: `https://api.openai.com/v1/chat/completions` (or your specific model endpoint)
+            -   *Example for Azure OpenAI*: `https://<your-resource-name>.openai.azure.com/openai/deployments/<your-deployment-name>/chat/completions?api-version=<api-version>`
+            -   *Example for a local LLM*: `http://localhost:8080/v1/completions`
+    -   The `LLMApiClient` in `DotNetUpgradeAgents/core_components.py` is designed to load these environment variables.
+    -   **Payload Structure**: The JSON payload sent to the LLM (within `LLMApiClient.generate_code`) is structured generically. You may need to adjust the `payload` dictionary in that method to match the specific requirements of your LLM provider (e.g., different parameter names for `prompt`, `max_tokens`, or model selection). The client attempts to parse various common response structures, but this might also need provider-specific adjustments.
+    -   **API Costs**: Be aware that making calls to commercial LLM APIs will likely incur costs based on your provider's pricing model (usually per token). Monitor your usage.
+    -   If these environment variables are not set, the `LLMApiClient` will not be able to make calls, and tools relying on it will indicate an error or prompt for alternative actions.
 
 4.  **External Tool Paths (Simulated by default)**:
     -   Tools like `TFSTool`, `IISTool`, `NeoLoadTool` simulate their operations.
