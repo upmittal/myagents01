@@ -1,55 +1,62 @@
-<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT License. -->
-<!-- This file shows how to design a first-run page that provides a welcome screen to the user about the features of the add-in. -->
-
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Contoso Task Pane Add-in</title>
+    <title>LLM Email Rewriter</title>
 
     <!-- Office JavaScript API -->
-    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
 
-    <!-- For more information on Fluent UI, visit https://developer.microsoft.com/fluentui#/. -->
-    <link rel="stylesheet" href="https://res-1.cdn.office.net/files/fabric-cdn-prod_20230815.002/office-ui-fabric-core/11.1.0/css/fabric.min.css"/>
+    <!-- To Glook and feel of Office UI Fabric -->
+    <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/11.0.0/css/fabric.min.css"/>
 
-    <!-- Template styles -->
+    <!-- App specific CSS file -->
     <link href="taskpane.css" rel="stylesheet" type="text/css" />
 </head>
-
-<body class="ms-font-m ms-welcome ms-Fabric">
-    <header class="ms-welcome__header ms-bgColor-neutralLighter">
-        <img width="90" height="90" src="../../assets/logo-filled.png" alt="Contoso" title="Contoso" />
-        <h1 class="ms-font-su">Welcome</h1>
-    </header>
-    <section id="sideload-msg" class="ms-welcome__main">
-        <h2 class="ms-font-xl">Please <a target="_blank" href="https://learn.microsoft.com/office/dev/add-ins/testing/test-debug-office-add-ins#sideload-an-office-add-in-for-testing">sideload</a> your add-in to see app body.</h2>
-    </section>
-    <main id="app-body" class="ms-welcome__main" style="display: none;">
-        <h2 class="ms-font-xl"> Discover what Office Add-ins can do for you today! </h2>
-        <ul class="ms-List ms-welcome__features">
-            <li class="ms-ListItem">
-                <i class="ms-Icon ms-Icon--Ribbon ms-font-xl"></i>
-                <span class="ms-font-m">Achieve more with Office integration</span>
-            </li>
-            <li class="ms-ListItem">
-                <i class="ms-Icon ms-Icon--Unlock ms-font-xl"></i>
-                <span class="ms-font-m">Unlock features and functionality</span>
-            </li>
-            <li class="ms-ListItem">
-                <i class="ms-Icon ms-Icon--Design ms-font-xl"></i>
-                <span class="ms-font-m">Create and visualize like a pro</span>
-            </li>
-        </ul>
-        <p class="ms-font-l">Modify the source files, then click <b>Run</b>.</p>
-        <div role="button" id="run" class="ms-welcome__action ms-Button ms-Button--hero ms-font-xl">
-            <span class="ms-Button-label">Run</span>
+<body class="ms-Fabric" dir="ltr">
+    <div id="panel-container" class="ms-Panel">
+        <div class="ms-Panel-header">
+            <p class="ms-Panel-headerText">LLM Email Rewriter</p>
         </div>
-        <p><label id="item-subject"></label></p>
-    </main>
-</body>
+        <div class="ms-Panel-content">
+            <div class="ms-Grid" dir="ltr">
+                <div class="ms-Grid-row">
+                    <div class="ms-Grid-col ms-sm12 ms-md12 ms-lg12">
+                        <h3 class="ms-font-xl">Select Model & Rewrite</h3>
+                    </div>
+                </div>
 
+                <div class="ms-Grid-row">
+                    <div class="ms-Grid-col ms-sm12 ms-md12 ms-lg12">
+                        <label class="ms-Label" for="model-selector">Choose LLM Model:</label>
+                        <select id="model-selector" class="ms-Dropdown-select">
+                            <option value="" disabled selected>Loading models...</option>
+                            <!-- Models will be populated here by JavaScript -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="ms-Grid-row" style="margin-top: 10px;">
+                    <div class="ms-Grid-col ms-sm12 ms-md12 ms-lg12">
+                        <button id="rewrite-button" class="ms-Button ms-Button--primary">
+                            <span class="ms-Button-label">Rewrite Selected Text</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ms-Grid-row" style="margin-top: 15px;">
+                    <div class="ms-Grid-col ms-sm12 ms-md12 ms-lg12">
+                        <div id="status-area" class="ms-MessageBar">
+                            <!-- Messages will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Main taskpane script -->
+    <script type="text/javascript" src="taskpane.js"></script>
+</body>
 </html>

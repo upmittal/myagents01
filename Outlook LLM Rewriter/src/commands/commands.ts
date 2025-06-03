@@ -78,7 +78,7 @@ Office.actions.associate("rewriteSelectedText", async (event: Office.AddinComman
                   Office.context.mailbox.item.notificationMessages.replaceAsync("rewriteSuccessNotification", {
                     type: Office.MailboxEnums.ItemNotificationMessageType.InformationalMessage,
                     message: "Text successfully rewritten and updated!", // Clarified success message
-                    persistent: false, 
+                    persistent: false,
                   });
                 }
                 // Crucially, event.completed() must be called after setSelectedDataAsync finishes.

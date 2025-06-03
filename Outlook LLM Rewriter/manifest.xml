@@ -50,19 +50,19 @@
                 <Label resid="GroupLabel"/>
                 <!-- Removed the original ShowTaskpane button to avoid confusion as per interpretation of task -->
                 <!-- If a taskpane is still desired, it should be added as a separate button -->
-                <Control xsi:type="Button" id="msgReadRewriteSelectionButton"> <!-- Changed ID from ActionButton for clarity -->
-                  <Label resid="RewriteButton.Label"/> <!-- Changed resid -->
+                <Control xsi:type="Button" id="msgReadRewriteSelectionButton"> <!-- ID kept for simplicity -->
+                  <Label resid="TaskpaneButton.Label"/> <!-- Changed resid to use existing TaskpaneButton.Label -->
                   <Supertip>
-                    <Title resid="RewriteButton.Label"/> <!-- Changed resid -->
-                    <Description resid="RewriteButton.Tooltip"/> <!-- Changed resid -->
+                    <Title resid="TaskpaneButton.Label"/> <!-- Changed resid -->
+                    <Description resid="TaskpaneButton.Tooltip"/> <!-- Changed resid to use existing TaskpaneButton.Tooltip -->
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Icon.16x16"/>
                     <bt:Image size="32" resid="Icon.32x32"/>
                     <bt:Image size="80" resid="Icon.80x80"/>
                   </Icon>
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>rewriteSelectedText</FunctionName> <!-- Changed FunctionName -->
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="Taskpane.Url"/>
                   </Action>
                 </Control>
               </Group>
@@ -82,15 +82,15 @@
         <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/taskpane.html"/>
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="GroupLabel" DefaultValue="LLM Tools"/> <!-- Changed GroupLabel -->
-        <bt:String id="TaskpaneButton.Label" DefaultValue="Show Task Pane"/> <!-- This is now unused by active buttons -->
-        <bt:String id="ActionButton.Label" DefaultValue="Perform an action"/> <!-- This is now unused by active buttons -->
-        <bt:String id="RewriteButton.Label" DefaultValue="Rewrite Selected Text"/> <!-- Added new string -->
+        <bt:String id="GroupLabel" DefaultValue="LLM Tools"/>
+        <bt:String id="TaskpaneButton.Label" DefaultValue="Rewrite with LLM"/> <!-- Updated for ShowTaskpane action -->
+        <bt:String id="ActionButton.Label" DefaultValue="Perform an action"/> <!-- This remains unused -->
+        <!-- Removed RewriteButton.Label as it's no longer used by the primary button -->
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Opens a pane displaying all available properties."/> <!-- Unused -->
-        <bt:String id="ActionButton.Tooltip" DefaultValue="Perform an action when clicked."/> <!-- Unused -->
-        <bt:String id="RewriteButton.Tooltip" DefaultValue="Rewrites the selected text using an LLM."/> <!-- Added new string -->
+        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Open task pane to select LLM model and rewrite text."/> <!-- Updated for ShowTaskpane action -->
+        <bt:String id="ActionButton.Tooltip" DefaultValue="Perform an action when clicked."/> <!-- This remains unused -->
+        <!-- Removed RewriteButton.Tooltip as it's no longer used by the primary button -->
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

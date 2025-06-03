@@ -20,7 +20,7 @@
     "lib",
     "lib-amd"
   ],
-  "ts-node": { 
-    "files": true 
+  "ts-node": {
+    "files": true
   }
 }

@@ -6,11 +6,13 @@ An Outlook add-in that uses a locally running Ollama instance to rewrite selecte
 
 ## Features
 
--   Integrates with the Outlook ribbon (Message Read surface).
--   Allows users to select text in an email and request a rewrite.
--   Connects to a local Ollama service to perform the text generation.
--   Replaces the selected text with the rewritten version.
--   Provides user notifications for progress and errors.
+-   Integrates with the Outlook ribbon to open a task pane.
+-   Opens a task pane for interaction, model selection, and triggering rewrites.
+-   Dynamically loads available LLM models from your Ollama instance into a dropdown selector in the task pane.
+-   Allows selection of the desired Ollama model for rewriting.
+-   Connects to a local Ollama service to perform the text generation using the chosen model.
+-   Replaces the selected text in the email with the rewritten version.
+-   Provides status updates and error messages within the task pane.
 
 ## Getting Started
 
@@ -25,7 +27,7 @@ An Outlook add-in that uses a locally running Ollama instance to rewrite selecte
 1.  **Clone the repository (or ensure you are in the project directory):**
     ```bash
     # If you had cloned a repo, you'd cd into it. For this environment, files are already present.
-    cd OutlookLlmRewriter 
+    cd OutlookLlmRewriter
     ```
 
 2.  **Install dependencies:**
@@ -43,7 +45,7 @@ An Outlook add-in that uses a locally running Ollama instance to rewrite selecte
 4.  **Start the development server:**
     This command starts a local web server (usually on `https://localhost:3000`) to serve your add-in's static files (HTML, JS, CSS). The manifest file (`manifest.xml`) points to this server.
     ```bash
-    npm start 
+    npm start
     # or sometimes: npm run dev-server
     ```
     Keep this server running while you are testing the add-in.
@@ -60,18 +62,24 @@ An Outlook add-in that uses a locally running Ollama instance to rewrite selecte
 This add-in requires a running instance of Ollama to function.
 
 -   **API Endpoint**: The add-in is configured to connect to Ollama at `http://localhost:11434/api/generate`. If your Ollama instance is running on a different URL or port, you will need to modify the `OLLAMA_API_URL` constant in the `src/utils/ollamaApi.ts` file and rebuild the add-in (`npm run build`).
--   **Model**: By default, the add-in uses the `"mistral"` model. This is specified in the `rewriteTextWithOllama` function in `src/utils/ollamaApi.ts`. You can change this to any other model available in your Ollama instance by modifying the code and rebuilding.
+-   **Model**: By default, the add-in uses the `"mistral"` model for rewriting if available. This is specified as a default in the `rewriteTextWithOllama` function in `src/utils/ollamaApi.ts` and the task pane attempts to select it if present. You can change the selected model in the task pane, or modify the code for a different hardcoded default if desired.
+-   **Model Discovery**: The add-in fetches the list of available models by querying the `/api/tags` endpoint of your Ollama instance (e.g., `http://localhost:11434/api/tags`). Ensure this endpoint is accessible if you want the model dropdown to populate correctly.
 -   **Ensure Ollama is Running**: Before using the add-in, make sure your Ollama application is running and the desired model (e.g., `mistral`) is downloaded and available. You can typically pull a model using `ollama pull mistral` in your terminal.
 
 ## Usage
 
-1.  Open an email in Outlook.
-2.  If composing a new email, type some text. If reading an email, you can use existing text.
-3.  Select the portion of text you want to rewrite.
-4.  Click on the "LLM Tools" tab in the Outlook ribbon (or find the group if the tab is shared).
-5.  Click the "Rewrite Selected Text" button.
-6.  You should see notifications indicating progress.
-7.  If successful, the selected text will be replaced with the rewritten version from Ollama. If there's an error (e.g., Ollama not running, no text selected), a notification will inform you.
+1.  Once the add-in is sideloaded and Ollama is running with your desired models:
+2.  Open an email in Outlook (or compose a new one).
+3.  Click the "Rewrite with LLM" button in the Outlook ribbon (usually on the Home tab or Message tab, under "LLM Tools").
+4.  The add-in's task pane will open on the side.
+5.  The task pane will attempt to load the list of available models from your Ollama instance into the "Choose LLM Model" dropdown.
+    - If successful, select your desired model. "mistral" (if available and contains "mistral" in its name) will be selected by default.
+    - If there's an error (e.g., Ollama not reachable), a message will be displayed in the status area of the task pane.
+6.  Select the text you want to rewrite in the email body.
+7.  Click the "Rewrite Selected Text" button in the task pane.
+8.  The add-in will send the selected text and chosen model to Ollama.
+9.  Status messages (e.g., "Rewriting...", "Text successfully rewritten!", or errors) will appear in the task pane.
+10. If successful, the selected text in your email will be replaced with the rewritten version.
 
 ## Important Note on Testing Limitations
 
